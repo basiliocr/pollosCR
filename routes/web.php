@@ -8,6 +8,8 @@ use App\Http\Controllers\ProveedorController;
 use App\Http\Controllers\InventarioController;
 use App\Http\Controllers\CompraController;
 use App\Http\Controllers\VentaController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\CajaController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -18,9 +20,9 @@ Route::get('/', function () {
     ]);
 });
 
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->name('dashboard')
+    ->middleware(['auth', 'verified']);
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -42,6 +44,9 @@ Route::get('/ventas', [VentaController::class, 'index'])->name('ventas.index');
 Route::get('/ventas/crear', [VentaController::class, 'create'])->name('ventas.create');
 Route::post('/ventas', [VentaController::class, 'store'])->name('ventas.store');
 Route::put('/ventas/{venta}/cancelar', [VentaController::class, 'cancelar'])->name('ventas.cancelar');
+Route::get('/caja', [CajaController::class, 'index'])->name('caja.index');
+Route::post('/caja/abrir', [CajaController::class, 'abrir'])->name('caja.abrir');
+Route::put('/caja/{caja}/cerrar', [CajaController::class, 'cerrar'])->name('caja.cerrar');
 });
 
 require __DIR__.'/auth.php';
