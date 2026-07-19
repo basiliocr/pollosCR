@@ -7,6 +7,7 @@ use Inertia\Inertia;
 use App\Http\Controllers\ProveedorController;
 use App\Http\Controllers\InventarioController;
 use App\Http\Controllers\CompraController;
+use App\Http\Controllers\VentaController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -37,6 +38,9 @@ Route::put('/inventario/{inventario}/minimo', [InventarioController::class, 'upd
 Route::get('/compras', [CompraController::class, 'index'])->name('compras.index');
 Route::get('/compras/crear', [CompraController::class, 'create'])->name('compras.create');
 Route::post('/compras', [CompraController::class, 'store'])->name('compras.store');
+Route::get('/ventas', [VentaController::class, 'index'])->name('ventas.index');
+Route::get('/ventas/crear', [VentaController::class, 'create'])->name('ventas.create');
+Route::post('/ventas', [VentaController::class, 'store'])->name('ventas.store');
 });
 
 require __DIR__.'/auth.php';
