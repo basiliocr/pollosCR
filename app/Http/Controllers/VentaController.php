@@ -146,4 +146,48 @@ class VentaController extends Controller
         return redirect()->route('ventas.index')
             ->with('success', 'Venta registrada correctamente.');
     }
+
+    public function cancelar(Request $request, Venta $venta)
+    {
+        // Si ya está cancelada, no hacer nada
+        if ($venta->estado === 'cancelada') {
+            return back()->withErrors(['venta' => 'Esta venta ya está cancelada.']);
+        }
+
+        DB::transaction(function () use ($venta, $request) {
+            // Devolver el stock de cada producto de la venta
+            foreach ($venta->detalles as $detalle) {
+                if ($detalle->producto_id) {
+                    $inv = Inventario::where('producto_id', $detalle->producto_id)
+                        ->where('sucursal_id', $venta->sucursal_id)
+                        ->first();
+                    if ($inv) {
+                        $inv->increment('stock_actual', $detalle->cantidad);
+                    }
+
+                    MovimientoInventario::create([
+                        'producto_id' => $detalle->producto_id,
+                        'sucursal_id' => $venta->sucursal_id,
+                        'user_id' => $request->user()->id,
+                        'tipo' => 'ajuste',
+                        'cantidad' => $detalle->cantidad,
+                        'motivo' => 'Cancelación de venta',
+                    ]);
+                }
+            }
+
+            // Marcar la venta como cancelada (el registro se conserva)
+            $venta->update(['estado' => 'cancelada']);
+
+            // Registrar en auditoría quién la canceló
+            \App\Models\AuditoriaLog::create([
+                'user_id' => $request->user()->id,
+                'accion' => 'Canceló venta',
+                'tabla_afectada' => 'ventas',
+                'registro_id' => null,
+            ]);
+        });
+
+        return back()->with('success', 'Venta cancelada y stock devuelto.');
+    }
 }

@@ -1,10 +1,16 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 
 defineProps({
     ventas: Array,
 });
+
+const cancelar = (venta) => {
+    if (confirm('¿Cancelar esta venta? El stock se devolverá al inventario.')) {
+        router.put(route('ventas.cancelar', venta.id));
+    }
+};
 </script>
 
 <template>
@@ -37,6 +43,7 @@ defineProps({
                                 <th class="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Sucursal</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Total (Bs)</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Estado</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Acciones</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200 bg-white">
@@ -47,12 +54,23 @@ defineProps({
                                 <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{{ venta.sucursal }}</td>
                                 <td class="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">{{ venta.total }}</td>
                                 <td class="whitespace-nowrap px-6 py-4 text-sm">
+                                
                                     <span v-if="venta.estado === 'completada'" class="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800">
                                         Completada
                                     </span>
                                     <span v-else class="rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-800">
                                         Cancelada
                                     </span>
+                                </td>
+                                <td class="whitespace-nowrap px-6 py-4 text-sm">
+                                    <button
+                                        v-if="venta.estado === 'completada'"
+                                        @click="cancelar(venta)"
+                                        class="text-red-600 hover:text-red-900"
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <span v-else class="text-gray-400">—</span>
                                 </td>
                             </tr>
                             <tr v-if="ventas.length === 0">

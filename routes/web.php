@@ -41,6 +41,7 @@ Route::post('/compras', [CompraController::class, 'store'])->name('compras.store
 Route::get('/ventas', [VentaController::class, 'index'])->name('ventas.index');
 Route::get('/ventas/crear', [VentaController::class, 'create'])->name('ventas.create');
 Route::post('/ventas', [VentaController::class, 'store'])->name('ventas.store');
+Route::put('/ventas/{venta}/cancelar', [VentaController::class, 'cancelar'])->name('ventas.cancelar');
 });
 
 require __DIR__.'/auth.php';

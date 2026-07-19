@@ -13,6 +13,7 @@ class DatabaseSeeder extends Seeder
         RolesSeeder::class,
         CategoriaSeeder::class,
         UnidadMedidaSeeder::class,
+        MetodoPagoSeeder::class,
         ]);
     }
 }
