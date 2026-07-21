@@ -14,6 +14,7 @@ use App\Models\VentaPago;
 use App\Models\MovimientoInventario;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class VentaController extends Controller
 {
@@ -111,23 +112,18 @@ class VentaController extends Controller
                     'subtotal' => $item['cantidad'] * $item['precio'],
                 ]);
 
-                // Descuenta stock solo de productos sueltos (los combos se detallarán más adelante)
+                // Descuento de stock según el tipo de item
                 if ($item['tipo'] === 'producto') {
-                    $inv = Inventario::where('producto_id', $item['id'])
-                        ->where('sucursal_id', $sucursalId)
-                        ->first();
-                    if ($inv) {
-                        $inv->decrement('stock_actual', $item['cantidad']);
+                    $this->descontarStock($item['id'], $sucursalId, $item['cantidad'], $request->user()->id, 'Venta');
+                } elseif ($item['tipo'] === 'combo') {
+                    // Un combo descuenta cada uno de sus productos componentes
+                    $combo = \App\Models\Combo::with('detalles')->find($item['id']);
+                    if ($combo) {
+                        foreach ($combo->detalles as $componente) {
+                            $cantidadTotal = $componente->cantidad * $item['cantidad'];
+                            $this->descontarStock($componente->producto_id, $sucursalId, $cantidadTotal, $request->user()->id, 'Venta (combo: ' . $combo->nombre . ')');
+                        }
                     }
-
-                    MovimientoInventario::create([
-                        'producto_id' => $item['id'],
-                        'sucursal_id' => $sucursalId,
-                        'user_id' => $request->user()->id,
-                        'tipo' => 'salida_venta',
-                        'cantidad' => $item['cantidad'],
-                        'motivo' => 'Venta',
-                    ]);
                 }
             }
 
@@ -158,21 +154,15 @@ class VentaController extends Controller
             // Devolver el stock de cada producto de la venta
             foreach ($venta->detalles as $detalle) {
                 if ($detalle->producto_id) {
-                    $inv = Inventario::where('producto_id', $detalle->producto_id)
-                        ->where('sucursal_id', $venta->sucursal_id)
-                        ->first();
-                    if ($inv) {
-                        $inv->increment('stock_actual', $detalle->cantidad);
+                    $this->devolverStock($detalle->producto_id, $venta->sucursal_id, $detalle->cantidad, $request->user()->id, 'Cancelación de venta');
+                } elseif ($detalle->combo_id) {
+                    $combo = \App\Models\Combo::with('detalles')->find($detalle->combo_id);
+                    if ($combo) {
+                        foreach ($combo->detalles as $componente) {
+                            $cantidadTotal = $componente->cantidad * $detalle->cantidad;
+                            $this->devolverStock($componente->producto_id, $venta->sucursal_id, $cantidadTotal, $request->user()->id, 'Cancelación (combo: ' . $combo->nombre . ')');
+                        }
                     }
-
-                    MovimientoInventario::create([
-                        'producto_id' => $detalle->producto_id,
-                        'sucursal_id' => $venta->sucursal_id,
-                        'user_id' => $request->user()->id,
-                        'tipo' => 'ajuste',
-                        'cantidad' => $detalle->cantidad,
-                        'motivo' => 'Cancelación de venta',
-                    ]);
                 }
             }
 
@@ -189,5 +179,63 @@ class VentaController extends Controller
         });
 
         return back()->with('success', 'Venta cancelada y stock devuelto.');
+    }
+
+    public function recibo(Venta $venta)
+    {
+        // Cargar la venta con todo lo que el recibo necesita
+        $venta->load([
+            'detalles.producto',
+            'detalles.combo',
+            'pagos.metodoPago',
+            'cliente',
+            'user',
+            'sucursal',
+        ]);
+
+        $pdf = Pdf::loadView('recibos.venta', [
+            'venta' => $venta,
+        ]);
+
+        // Descarga con nombre "recibo-XXXX.pdf"
+        return $pdf->stream('recibo-' . substr($venta->id, 0, 8) . '.pdf');
+    }
+
+    private function descontarStock($productoId, $sucursalId, $cantidad, $userId, $motivo)
+    {
+        $inv = Inventario::where('producto_id', $productoId)
+            ->where('sucursal_id', $sucursalId)
+            ->first();
+        if ($inv) {
+            $inv->decrement('stock_actual', $cantidad);
+        }
+
+        MovimientoInventario::create([
+            'producto_id' => $productoId,
+            'sucursal_id' => $sucursalId,
+            'user_id' => $userId,
+            'tipo' => 'salida_venta',
+            'cantidad' => $cantidad,
+            'motivo' => $motivo,
+        ]);
+    }
+
+    private function devolverStock($productoId, $sucursalId, $cantidad, $userId, $motivo)
+    {
+        $inv = Inventario::where('producto_id', $productoId)
+            ->where('sucursal_id', $sucursalId)
+            ->first();
+        if ($inv) {
+            $inv->increment('stock_actual', $cantidad);
+        }
+
+        MovimientoInventario::create([
+            'producto_id' => $productoId,
+            'sucursal_id' => $sucursalId,
+            'user_id' => $userId,
+            'tipo' => 'ajuste',
+            'cantidad' => $cantidad,
+            'motivo' => $motivo,
+        ]);
     }
 }

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Producto extends Model
 {
@@ -33,5 +34,22 @@ class Producto extends Model
     public function unidad(): BelongsTo
     {
         return $this->belongsTo(UnidadMedida::class, 'unidad_id');
+    }
+
+    public function inventario(): HasMany
+    {
+        return $this->hasMany(Inventario::class);
+    }
+
+    /** Ingredientes que componen este producto (si es un plato preparado). */
+    public function receta(): HasMany
+    {
+        return $this->hasMany(Receta::class, 'producto_id');
+    }
+
+    /** Recetas donde este producto figura como insumo de otro plato. */
+    public function usadoEnRecetas(): HasMany
+    {
+        return $this->hasMany(Receta::class, 'insumo_id');
     }
 }

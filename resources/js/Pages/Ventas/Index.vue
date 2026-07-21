@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 
@@ -7,7 +7,7 @@ defineProps({
 });
 
 const cancelar = (venta) => {
-    if (confirm('¿Cancelar esta venta? El stock se devolverá al inventario.')) {
+    if (confirm('Cancelar esta venta? El stock se devolvera al inventario.')) {
         router.put(route('ventas.cancelar', venta.id));
     }
 };
@@ -19,13 +19,8 @@ const cancelar = (venta) => {
     <AuthenticatedLayout>
         <template #header>
             <div class="flex items-center justify-between">
-                <h2 class="text-xl font-semibold leading-tight text-gray-800">
-                    Ventas
-                </h2>
-                <Link
-                    :href="route('ventas.create')"
-                    class="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
-                >
+                <h2 class="text-xl font-semibold leading-tight text-gray-800">Ventas</h2>
+                <Link :href="route('ventas.create')" class="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
                     + Nueva venta
                 </Link>
             </div>
@@ -54,29 +49,16 @@ const cancelar = (venta) => {
                                 <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{{ venta.sucursal }}</td>
                                 <td class="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">{{ venta.total }}</td>
                                 <td class="whitespace-nowrap px-6 py-4 text-sm">
-                                
-                                    <span v-if="venta.estado === 'completada'" class="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800">
-                                        Completada
-                                    </span>
-                                    <span v-else class="rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-800">
-                                        Cancelada
-                                    </span>
+                                    <span v-if="venta.estado === 'completada'" class="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800">Completada</span>
+                                    <span v-else class="rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-800">Cancelada</span>
                                 </td>
                                 <td class="whitespace-nowrap px-6 py-4 text-sm">
-                                    <button
-                                        v-if="venta.estado === 'completada'"
-                                        @click="cancelar(venta)"
-                                        class="text-red-600 hover:text-red-900"
-                                    >
-                                        Cancelar
-                                    </button>
-                                    <span v-else class="text-gray-400">—</span>
+                                    <a :href="route('ventas.recibo', venta.id)" target="_blank" class="text-indigo-600 hover:text-indigo-900">Recibo</a>
+                                    <button v-if="venta.estado === 'completada'" @click="cancelar(venta)" class="ml-4 text-red-600 hover:text-red-900">Cancelar</button>
                                 </td>
                             </tr>
                             <tr v-if="ventas.length === 0">
-                                <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">
-                                    No hay ventas registradas todavía.
-                                </td>
+                                <td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500">No hay ventas registradas todavia.</td>
                             </tr>
                         </tbody>
                     </table>
